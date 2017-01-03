@@ -28,14 +28,18 @@ var Game = {
         width: this.display.main.w,
         height: this.display.main.h}
       );
+      this.display.main.o.setOptions({
 
+          fontStyle: "bold",
+          bg: "red"
+      });
       for (var i = 0; i<13; i++) {
         this.display.main.o.drawText(5,i+5,"The Life of Pablo");
       }
       for (var i = 0; i<10; i++) {
         this.display.main.o.drawText(14,i+10,"The Life of Pablo");
       }
-      this.display.main.o.draw(0, 0, "@", "transparent");
-      this.display.main.o.draw(1, 0, "@", "green", "red");
+      for (var i = 0; i<75; i++){
+      this.display.main.o.draw(1+i, 0, "@", "green", "red");}
     }
 };
