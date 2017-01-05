@@ -1,5 +1,5 @@
 Game.Message = {
-  _curMessage: '',
+  _curMessage:' ',
   render: function(display){
     display.clear();
     display.drawText(1,5, this._curMessage,'blue','yellow');
