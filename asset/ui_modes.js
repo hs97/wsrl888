@@ -3,6 +3,7 @@ Game.UIMode = {};
 Game.UIMode.gameStart = {
   enter: function(){
     console.log("entered gameStart");
+    Game.Message.send('game starts');
   },
   exit: function(){
     console.log("exited gameStart");

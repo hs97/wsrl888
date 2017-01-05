@@ -40,7 +40,7 @@ var Game = {
     },
     avatar: {
       w:20,
-      h:20,
+      h:24,
       o:null
     },
     message: {
