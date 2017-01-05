@@ -1,4 +1,7 @@
 Game.UIMode = {};
+Game.UIMode.DEFAULT_COLOR_FG = '#fff';
+Game.UIMode.DEFAULT_COLOR_BG = '#000';
+Game.UIMode.DEFAULT_COLOR_STR = '%c{'+Game.UIMode.DEFAULT_COLOR_FG+'}%b{'+Game.UIMode.DEFAULT_COLOR_BG+'}';
 
 Game.UIMode.gameStart = {
   enter: function(){
@@ -38,6 +41,7 @@ Game.UIMode.gamePersistence = {
   //  console.dir(inputType);
   //  console.log('gameStart inputData:');
   //  console.dir(inputData);
+
     var inputChar = String.fromCharCode(inputData.charCode);
     if (inputChar == 'S'||inputChar == 's') { // ignore the various modding keys - control, shift, etc.
       this.saveGame();
@@ -46,17 +50,18 @@ Game.UIMode.gamePersistence = {
         var json_state_data = window.localStorage.getItem(Game._PERSISTANCE_NAMESPACE);
         var state_data = JSON.parse(json_state_data);
         Game.setRandomSeed(state_data._randomSeed);
+        Game.UIMode.gamePlay.setupPlay();
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     } else if (inputChar == 'N'||inputChar == 'n') {
-      Game.setRandomSeed(5 + Math.floor(ROT.RNG.getUniform()*100000));
-      Game.switchUIMode(Game.UIMode.gamePlay);
+      this.newGame();
     }
   },
    saveGame: function (json_state_data) {
       if (this.localStorageAvailable()) {
         console.log (JSON.stringify(Game.theGame));
         window.localStorage.setItem(Game._PERSISTANCE_NAMESPACE, JSON.stringify(Game.theGame)); // .toJSON()
+
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     },
@@ -65,11 +70,13 @@ Game.UIMode.gamePersistence = {
         var json_state_data = window.localStorage.getItem(Game._PERSISTANCE_NAMESPACE);
         var state_data = JSON.parse(json_state_data);
         Game.setRandomSeed(state_data._randomSeed);
+        Game.UIMode.gamePlay.setupPlay();
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     },
     newGame: function () {
       Game.setRandomSeed(5 + Math.floor(ROT.RNG.getUniform()*100000));
+      Game.UIMode.gamePlay.setupPlay();
       Game.switchUIMode(Game.UIMode.gamePlay);
     },
     localStorageAvailable: function () { // NOTE: see https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
@@ -86,6 +93,9 @@ Game.UIMode.gamePersistence = {
     }
 };
 Game.UIMode.gamePlay = {
+  attr: {
+  _map: null
+},
   enter: function(){
     console.log("entered gamePlay");
   },
@@ -94,9 +104,13 @@ Game.UIMode.gamePlay = {
   },
   render: function(display) {
     console.log("rendered gamePlay");
+    var fg = Game.UIMode.DEFAULT_COLOR_FG;
+   var bg = Game.UIMode.DEFAULT_COLOR_BG;
+   this.attr._map.renderOn(display);
     display.drawText(5,5,"game play mode");
   },
   handleInput: function(inputType,inputData){
+     Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
     console.log("input for gaming");
     console.log(inputType);
     console.dir(inputData);
@@ -113,7 +127,30 @@ Game.UIMode.gamePlay = {
       Game.switchUIMode(Game.UIMode.gamePersistence);
     }
     }
+  },
+  setupPlay: function () {
+  var mapTiles = Game.util.init2DArray(80,24,Game.Tile.nullTile);
+  var generator = new ROT.Map.Cellular(80, 24);
+  generator.randomize(0.5);
+
+  // repeated cellular automata process
+  var totalIterations = 3;
+  for (var i = 0; i < totalIterations - 1; i++) {
+    generator.create();
   }
+
+  // run again then update map
+  generator.create(function(x,y,v) {
+    if (v === 1) {
+      mapTiles[x][y] = Game.Tile.floorTile;
+    } else {
+      mapTiles[x][y] = Game.Tile.wallTile;
+    }
+  });
+
+  // create map from the tiles
+  this.attr._map =  new Game.Map(mapTiles);
+}
 };
 
 Game.UIMode.gameLose = {
