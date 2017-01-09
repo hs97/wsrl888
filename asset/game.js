@@ -123,8 +123,8 @@ var Game = {
    }
  },
  renderDisplayMessage: function() {
-   //Game.Message.render(this.getDisplay('message').o);
-   this.display.message.o.drawText(1,1,"new message");
+   Game.Message.render(this.display.message.o);
+
 
  },
  eventHandler: function (eventType, evt) {

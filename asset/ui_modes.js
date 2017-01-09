@@ -5,7 +5,6 @@ Game.UIMode.DEFAULT_COLOR_STR = '%c{'+Game.UIMode.DEFAULT_COLOR_FG+'}%b{'+Game.U
 
 Game.UIMode.gameStart = {
   enter: function(){
-    console.log("entered gameStart");
     Game.Message.send('game starts');
   },
   exit: function(){
@@ -26,6 +25,7 @@ Game.UIMode.gameStart = {
 Game.UIMode.gamePersistence = {
   enter: function () {
     console.log('game persistence');
+    Game.Message.send("save, restore, or new game");
   },
   exit: function () {
   },
@@ -94,10 +94,43 @@ Game.UIMode.gamePersistence = {
 };
 Game.UIMode.gamePlay = {
   attr: {
-  _map: null
+  _map: null,
+  _mapWidth: 300,
+  _mapHeight: 200,
+  _cameraX: 100,
+  _cameraY: 100,
+  _avatarX: 100,
+  _avatarY: 100
 },
   enter: function(){
     console.log("entered gamePlay");
+    Game.Message.clear();
+   Game.refresh();
+  },
+  renderAvatar: function(display) {
+    Game.Symbol.AVATAR.draw(display,this.attr._avatarX-this.attr._cameraX+display._options.width/2,
+                                    this.attr._avatarY-this.attr._cameraY+display._options.height/2);
+  },
+  renderAvatarInfo: function (display) {
+    var fg = Game.UIMode.DEFAULT_COLOR_FG;
+    var bg = Game.UIMode.DEFAULT_COLOR_BG;
+    display.drawText(1,2,"avatar x: "+this.attr._avatarX,fg,bg);
+    display.drawText(1,3,"avatar y: "+this.attr._avatarY,fg,bg);
+  },
+  moveAvatar: function(dx,dy) {
+    this.attr._avatarX = Math.min(Math.max(0,this.attr._avatarX + dx),this.attr._mapWidth);
+    this.attr._avatarY = Math.min(Math.max(0,this.attr._avatarY + dy),this.attr._mapHeight);
+    this.setCameraToAvatar();
+  },
+  moveCamera: function (dx,dy) {
+    this.setCamera(this.attr._cameraX + dx,this.attr._cameraY + dy);
+  },
+  setCamera: function (sx, sy) {
+    this.attr._cameraX = Math.min(Math.max(0,sx),this.attr._mapWidth);;
+    this.attr._cameraY = Math.min(Math.max(0,sy),this.attr._mapHeight);
+  },
+  setCameraToAvatar: function (){
+    this.setCamera(this.attr._avatarX,this.attr._avatarY);
   },
   exit: function(){
     console.log("exited gamepLAY");
@@ -105,12 +138,14 @@ Game.UIMode.gamePlay = {
   render: function(display) {
     console.log("rendered gamePlay");
     var fg = Game.UIMode.DEFAULT_COLOR_FG;
-   var bg = Game.UIMode.DEFAULT_COLOR_BG;
-   this.attr._map.renderOn(display);
-    display.drawText(5,5,"game play mode");
+    var bg = Game.UIMode.DEFAULT_COLOR_BG;
+    this.attr._map.renderOn(display,this.attr._cameraX,this.attr._cameraY);
+    display.drawText(5,5,"game play mode");//DEV
+    display.drawText(5,7,"W to win, L to lose, anything else to keep on keeping on");
+    display.drawText(5,9,"= to save, load, or start over");
   },
   handleInput: function(inputType,inputData){
-     Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
+    Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
     console.log("input for gaming");
     console.log(inputType);
     console.dir(inputData);
@@ -118,10 +153,31 @@ Game.UIMode.gamePlay = {
       if (inputData.key =='w') {
         Game.switchUIMode(Game.UIMode.gameWin);}
 
+
+      else if (inputData.key == '1') {
+        this.moveAvatar(-1,1);
+      } else if (inputData.key == '2') {
+        this.moveAvatar(0,1);
+      } else if (inputData.key == '3') {
+        this.moveAvatar(1,1);
+      } else if (inputData.key == '4') {
+        this.moveAvatar(-1,0);
+      } else if (inputData.key == '5') {
+        // do nothing / stay still
+      } else if (inputData.key == '6') {
+        this.moveAvatar(1,0);
+      } else if (pinputData.key == '7') {
+        this.moveAvatar(-1,-1);
+      } else if (inputData.key == '8') {
+        this.moveAvatar(0,-1);
+      } else if (inputData.key == '9') {
+        this.moveAvatar(1,-1);
       }
-      else if (inputType == 'keydown') {
-        if ((inputData.key =='l')) {
-          Game.switchUIMode (Game.UIMode.gameLose);
+      Game.refresh();
+   }
+    else if (inputType == 'keydown') {
+      if ((inputData.key =='l')) {
+        Game.switchUIMode (Game.UIMode.gameLose);
       }
     if (inputData.key=='='){
       Game.switchUIMode(Game.UIMode.gamePersistence);
@@ -129,8 +185,8 @@ Game.UIMode.gamePlay = {
     }
   },
   setupPlay: function () {
-  var mapTiles = Game.util.init2DArray(80,24,Game.Tile.nullTile);
-  var generator = new ROT.Map.Cellular(80, 24);
+  var mapTiles = Game.util.init2DArray(this.attr._mapWidth,this.attr._mapHeight,Game.Tile.nullTile);
+  var generator = new ROT.Map.Cellular(this.attr._mapWidth,this.attr._mapHeight);
   generator.randomize(0.5);
 
   // repeated cellular automata process
@@ -156,6 +212,7 @@ Game.UIMode.gamePlay = {
 Game.UIMode.gameLose = {
   enter: function(){
     console.log("entered gameLose");
+     Game.Message.send("So sorry - try again!");
   },
   exit: function(){
     console.log("exited gameLose");
