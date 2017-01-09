@@ -105,22 +105,26 @@ Game.UIMode.gamePlay = {
   enter: function(){
     console.log("entered gamePlay");
     Game.Message.clear();
+
    Game.refresh();
   },
   renderAvatar: function(display) {
-    Game.Symbol.AVATAR.draw(display,this.attr._avatarX-this.attr._cameraX+display._options.width/2,
-                                    this.attr._avatarY-this.attr._cameraY+display._options.height/2);
+    Game.Symbol.AVATAR.draw(display,this.attr._avatar.getX()-this.attr._cameraX+display._options.width/2,
+                                    this.attr._avatar.getY()-this.attr._cameraY+display._options.height/2);
   },
   renderAvatarInfo: function (display) {
     var fg = Game.UIMode.DEFAULT_COLOR_FG;
     var bg = Game.UIMode.DEFAULT_COLOR_BG;
-    display.drawText(1,2,"avatar x: "+this.attr._avatarX,fg,bg);
-    display.drawText(1,3,"avatar y: "+this.attr._avatarY,fg,bg);
+    display.drawText(1,2,"avatar x: "+this.attr._avatar.getX(),fg,bg);
+    display.drawText(1,3,"avatar y: "+this.attr._avatar.getY(),fg,bg);
+    display.drawText(1,4,"Max HP: "+this.attr._avatar.getMaxHp(),fg,bg);
+    display.drawText(1,5,"Cur HP: "+this.attr._avatar.getCurHp(),fg,bg);
+    display.drawText(1,6,"Cur Turn: "+this.attr._avatar.getTurns(),fg,bg);
   },
   moveAvatar: function(dx,dy) {
-    this.attr._avatarX = Math.min(Math.max(0,this.attr._avatarX + dx),this.attr._mapWidth);
-    this.attr._avatarY = Math.min(Math.max(0,this.attr._avatarY + dy),this.attr._mapHeight);
-    this.setCameraToAvatar();
+    if (this.attr._avatar.tryWalk(this.attr._map,dx,dy)) {
+      this.setCameraToAvatar();
+    }
   },
   moveCamera: function (dx,dy) {
     this.setCamera(this.attr._cameraX + dx,this.attr._cameraY + dy);
@@ -130,19 +134,21 @@ Game.UIMode.gamePlay = {
     this.attr._cameraY = Math.min(Math.max(0,sy),this.attr._mapHeight);
   },
   setCameraToAvatar: function (){
-    this.setCamera(this.attr._avatarX,this.attr._avatarY);
+    this.setCamera(this.attr._avatar.getX(),this.attr._avatar.getY());
   },
   exit: function(){
     console.log("exited gamepLAY");
   },
   render: function(display) {
-    console.log("rendered gamePlay");
     var fg = Game.UIMode.DEFAULT_COLOR_FG;
     var bg = Game.UIMode.DEFAULT_COLOR_BG;
     this.attr._map.renderOn(display,this.attr._cameraX,this.attr._cameraY);
-    display.drawText(5,5,"game play mode");//DEV
-    display.drawText(5,7,"W to win, L to lose, anything else to keep on keeping on");
-    display.drawText(5,9,"= to save, load, or start over");
+    display.drawText(1,1,"game play",fg,bg); // DEV
+    display.drawText(1,3,"press [Enter] to win",fg,bg);
+    display.drawText(1,4,"press [Esc] to lose",fg,bg);
+    display.drawText(1,5,"press = to save, restore, or start a new game",fg,bg);
+    this.renderAvatar(display);
+
   },
   handleInput: function(inputType,inputData){
     Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
@@ -166,7 +172,7 @@ Game.UIMode.gamePlay = {
         // do nothing / stay still
       } else if (inputData.key == '6') {
         this.moveAvatar(1,0);
-      } else if (pinputData.key == '7') {
+      } else if (inputData.key == '7') {
         this.moveAvatar(-1,-1);
       } else if (inputData.key == '8') {
         this.moveAvatar(0,-1);
@@ -203,9 +209,28 @@ Game.UIMode.gamePlay = {
       mapTiles[x][y] = Game.Tile.wallTile;
     }
   });
-
+   Game.Map.prototype.getRandomLocation = function(filter_func) {
+    if (filter_func === undefined) {
+      filter_func = function(tile) { return true; };
+    }
+    var tX,tY,t;
+    do {
+      tX = Game.util.randomInt(0,this.attr._width - 1);
+      tY = Game.util.randomInt(0,this.attr._height - 1);
+      t = this.getTile(tX,tY);
+    } while (! filter_func(t));
+    return {x:tX,y:tY};
+ };
   // create map from the tiles
   this.attr._map =  new Game.Map(mapTiles);
+  this.attr._avatar = new Game.Entity(Game.EntityTemplates.Avatar);
+  this.attr._avatar.setPos(this.attr._map.getRandomWalkableLocation());
+  this.attr._avatar.setTurns(0);
+
+    // restore anything else if the data is available
+
+
+    this.setCameraToAvatar();
 }
 };
 

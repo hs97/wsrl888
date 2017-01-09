@@ -104,14 +104,14 @@ var Game = {
    this.renderDisplayMessage();
  },
  renderDisplayAvatar: function() {
-   //this.display.avatar.o.clear();
-   //if (this._curUiMode === null) {
-     //return;
-   //}
-   //if (this._curUiMode.hasOwnProperty('renderAvatar')) {
-     //this._curUiMode.renderAvatar(this._display.avatar.o);
-   //}
-   this.display.avatar.o.drawText(1,5,"display avatar");
+   this.display.avatar.o.clear();
+   if (this._curUiMode === null) {
+     return;
+   }
+   if (this._curUiMode.hasOwnProperty('renderAvatar')) {
+     this._curUiMode.renderAvatarInfo(this.display.avatar.o);
+   }
+
  },
  renderDisplayMain: function() {
    this.display.main.o.clear();
