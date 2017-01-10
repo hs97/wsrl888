@@ -1,4 +1,5 @@
-Game.ALL_ENTITIES = {};
+Game.ALL_ENTITIES = {}; // NOTE: consider putting this in the Entity namespace....?
+
 Game.Entity = function(template) {
     template = template || {};
     Game.Symbol.call(this, template);
@@ -10,35 +11,37 @@ Game.Entity = function(template) {
     this._entityID = Game.util.randomString(32);
     Game.ALL_ENTITIES[this._entityID] = this;
 
+    this._map = null;
+
     // mixin sutff
-      // track mixins and groups, copy over non-META properties, and run the mixin init if it exists
-      this._mixinTracker = {};
-      console.dir(template);
-      console.dir(template.mixins);
-      if (template.hasOwnProperty('mixins')) {
-        for (var i = 0; i < template.mixins.length; i++) {
-          var mixin = template.mixins[i];
-          console.dir(mixin);
-          this._mixinTracker[mixin.META.mixinName] = true;
-          this._mixinTracker[mixin.META.mixinGroup] = true;
-          for (var mixinProp in mixinProp != 'META' && mixin) {
-            if (mixinProp != 'META' && mixin.hasOwnProperty(mixinProp)) {
-              this[mixinProp] = mixin[mixinProp];
-            }
-          }
-          if (mixin.META.hasOwnProperty('stateNamespace')) {
-            this.attr[mixin.META.stateNamespace] = {};
-            for (var mixinStateProp in mixin.META.stateModel) {
-              if (mixin.META.stateModel.hasOwnProperty(mixinStateProp)) {
-                this.attr[mixin.META.stateNamespace][mixinStateProp] = mixin.META.stateModel[mixinStateProp];
-              }
-            }
-          }
-          if (mixin.META.hasOwnProperty('init')) {
-            mixin.META.init.call(this,template);
+    // track mixins and groups, copy over non-META properties, and run the mixin init if it exists
+    this._mixins = template.mixins || [];
+    this._mixinTracker = {};
+    // console.dir(template);
+    // console.dir(template.mixins);
+    // console.dir(this._mixins);
+    for (var i = 0; i < this._mixins.length; i++) {
+      var mixin = this._mixins[i];
+      // console.dir(mixin);
+      this._mixinTracker[mixin.META.mixinName] = true;
+      this._mixinTracker[mixin.META.mixinGroup] = true;
+      for (var mixinProp in mixinProp != 'META' && mixin) {
+        if (mixinProp != 'META' && mixin.hasOwnProperty(mixinProp)) {
+          this[mixinProp] = mixin[mixinProp];
+        }
+      }
+      if (mixin.META.hasOwnProperty('stateNamespace')) {
+        this.attr[mixin.META.stateNamespace] = {};
+        for (var mixinStateProp in mixin.META.stateModel) {
+          if (mixin.META.stateModel.hasOwnProperty(mixinStateProp)) {
+            this.attr[mixin.META.stateNamespace][mixinStateProp] = mixin.META.stateModel[mixinStateProp];
           }
         }
       }
+      if (mixin.META.hasOwnProperty('init')) {
+        mixin.META.init.call(this,template);
+      }
+    }
 };
 Game.Entity.extend(Game.Symbol);
 
@@ -48,6 +51,17 @@ Game.Entity.prototype.hasMixin = function(checkThis) {
     } else {
       return this._mixinTracker.hasOwnProperty(checkThis);
     }
+};
+
+Game.Entity.prototype.getId = function() {
+    return this._entityID;
+};
+
+Game.Entity.prototype.getMap = function() {
+    return this._map;
+};
+Game.Entity.prototype.setMap = function(map) {
+    this._map = map;
 };
 
 Game.Entity.prototype.getName = function() {
@@ -64,6 +78,9 @@ Game.Entity.prototype.setPos = function(x_or_xy,y) {
     this.attr._x = x_or_xy;
     this.attr._y = y;
   }
+};
+Game.Entity.prototype.getPos = function () {
+  return {x:this.attr._x,y:this.attr._y};
 };
 Game.Entity.prototype.getX = function() {
     return this.attr._x;
