@@ -52,10 +52,10 @@ var Game = {
   },
 
   _curUiMode: null,
-  theGame: null,
+  _game: null,
 
   init: function() {
-    this.theGame = this;
+    this._game = this;
     Game.setRandomSeed(5 + Math.floor(ROT.RNG.getUniform()*100000));
     //this._randomSeed = 76250;
     console.log("using random seed "+this._randomSeed);
@@ -147,7 +147,9 @@ var Game = {
    this.renderDisplayAll();
  },
  toJSON: function() {
-   var json = {"_randomSeed":this._randomSeed};
-   return json;
+    var json = {};
+    json._randomSeed = this._randomSeed;
+    json[Game.UIMode.gamePlay.JSON_KEY] = Game.UIMode.gamePlay.toJSON();
+    return json;
  }
 };

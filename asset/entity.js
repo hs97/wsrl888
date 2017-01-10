@@ -1,3 +1,4 @@
+Game.ALL_ENTITIES = {};
 Game.Entity = function(template) {
     template = template || {};
     Game.Symbol.call(this, template);
@@ -23,6 +24,14 @@ Game.Entity = function(template) {
           for (var mixinProp in mixinProp != 'META' && mixin) {
             if (mixinProp != 'META' && mixin.hasOwnProperty(mixinProp)) {
               this[mixinProp] = mixin[mixinProp];
+            }
+          }
+          if (mixin.META.hasOwnProperty('stateNamespace')) {
+            this.attr[mixin.META.stateNamespace] = {};
+            for (var mixinStateProp in mixin.META.stateModel) {
+              if (mixin.META.stateModel.hasOwnProperty(mixinStateProp)) {
+                this.attr[mixin.META.stateNamespace][mixinStateProp] = mixin.META.stateModel[mixinStateProp];
+              }
             }
           }
           if (mixin.META.hasOwnProperty('init')) {

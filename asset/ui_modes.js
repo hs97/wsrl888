@@ -46,21 +46,14 @@ Game.UIMode.gamePersistence = {
     if (inputChar == 'S'||inputChar == 's') { // ignore the various modding keys - control, shift, etc.
       this.saveGame();
     } else if (inputChar == 'L') {
-      if (this.localStorageAvailable()) {
-        var json_state_data = window.localStorage.getItem(Game._PERSISTANCE_NAMESPACE);
-        var state_data = JSON.parse(json_state_data);
-        Game.setRandomSeed(state_data._randomSeed);
-        Game.UIMode.gamePlay.setupPlay();
-        Game.switchUIMode(Game.UIMode.gamePlay);
-      }
+      this.restoreGame();
     } else if (inputChar == 'N'||inputChar == 'n') {
       this.newGame();
     }
   },
    saveGame: function (json_state_data) {
       if (this.localStorageAvailable()) {
-        console.log (JSON.stringify(Game.theGame));
-        window.localStorage.setItem(Game._PERSISTANCE_NAMESPACE, JSON.stringify(Game.theGame)); // .toJSON()
+        window.localStorage.setItem(Game._PERSISTANCE_NAMESPACE, JSON.stringify(Game._game)); // .toJSON()
 
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
@@ -70,7 +63,7 @@ Game.UIMode.gamePersistence = {
         var json_state_data = window.localStorage.getItem(Game._PERSISTANCE_NAMESPACE);
         var state_data = JSON.parse(json_state_data);
         Game.setRandomSeed(state_data._randomSeed);
-        Game.UIMode.gamePlay.setupPlay();
+        Game.UIMode.gamePlay.setupPlay(state_data);
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     },
@@ -90,7 +83,39 @@ Game.UIMode.gamePersistence = {
         Game.Message.send('Sorry, no local data storage is available for this browser');
     		return false;
     	}
-    }
+    },
+    BASE_toJSON: function(state_hash_name) {
+       var state = this.attr;
+       if (state_hash_name) {
+         state = this[state_hash_name];
+       }
+       var json = {};
+       for (var at in state) {
+         if (state.hasOwnProperty(at)) {
+           if (state[at] instanceof Object && 'toJSON' in state[at]) {
+             json[at] = state[at].toJSON();
+           } else {
+             json[at] = state[at];
+           }
+         }
+       }
+       return json;
+     },
+     BASE_fromJSON: function (json,state_hash_name) {
+       var using_state_hash = 'attr';
+       if (state_hash_name) {
+         using_state_hash = state_hash_name;
+       }
+       for (var at in this[using_state_hash]) {
+         if (this[using_state_hash].hasOwnProperty(at)) {
+           if (this[using_state_hash][at] instanceof Object && 'fromJSON' in this[using_state_hash][at]) {
+             this[using_state_hash][at].fromJSON(json[at]);
+           } else {
+             this[using_state_hash][at] = json[at];
+           }
+         }
+       }
+     }
 };
 Game.UIMode.gamePlay = {
   attr: {
@@ -99,9 +124,9 @@ Game.UIMode.gamePlay = {
   _mapHeight: 200,
   _cameraX: 100,
   _cameraY: 100,
-  _avatarX: 100,
-  _avatarY: 100
+  _avatar: null
 },
+JSON_KEY: 'uiMode_gamePlay',
   enter: function(){
     console.log("entered gamePlay");
     Game.Message.clear();
@@ -144,8 +169,8 @@ Game.UIMode.gamePlay = {
     var bg = Game.UIMode.DEFAULT_COLOR_BG;
     this.attr._map.renderOn(display,this.attr._cameraX,this.attr._cameraY);
     display.drawText(1,1,"game play",fg,bg); // DEV
-    display.drawText(1,3,"press [Enter] to win",fg,bg);
-    display.drawText(1,4,"press [Esc] to lose",fg,bg);
+    display.drawText(1,3,"press w to win",fg,bg);
+    display.drawText(1,4,"press l to lose",fg,bg);
     display.drawText(1,5,"press = to save, restore, or start a new game",fg,bg);
     this.renderAvatar(display);
 
@@ -190,7 +215,7 @@ Game.UIMode.gamePlay = {
     }
     }
   },
-  setupPlay: function () {
+  setupPlay: function (restorationData) {
   var mapTiles = Game.util.init2DArray(this.attr._mapWidth,this.attr._mapHeight,Game.Tile.nullTile);
   var generator = new ROT.Map.Cellular(this.attr._mapWidth,this.attr._mapHeight);
   generator.randomize(0.5);
@@ -223,15 +248,44 @@ Game.UIMode.gamePlay = {
  };
   // create map from the tiles
   this.attr._map =  new Game.Map(mapTiles);
-  this.attr._avatar = new Game.Entity(Game.EntityTemplates.Avatar);
-  this.attr._avatar.setPos(this.attr._map.getRandomWalkableLocation());
-  this.attr._avatar.setTurns(0);
+  this.attr._avatar = Game.EntityGenerator.create('avatar');
 
+  if (restorationData !== undefined && restorationData.hasOwnProperty(Game.UIMode.gamePlay.JSON_KEY)) {
+    this.fromJSON(restorationData[Game.UIMode.gamePlay.JSON_KEY]);
+  }
+  else {
+    this.attr._avatar.setPos(this.attr._map.getRandomWalkableLocation());
+  }
     // restore anything else if the data is available
 
 
     this.setCameraToAvatar();
-}
+},
+toJSON: function() {
+   var json = {};
+   for (var at in this.attr) {
+     if (this.attr.hasOwnProperty(at)) {
+       if (this.attr[at] instanceof Object && 'toJSON' in this.attr[at]) {
+         json[at] = this.attr[at].toJSON();
+       } else {
+         json[at] = this.attr[at];
+       }
+     }
+   }
+   return json;
+ },
+ fromJSON: function (json) {
+   for (var at in this.attr) {
+     if (this.attr.hasOwnProperty(at)) {
+       if (this.attr[at] instanceof Object && 'fromJSON' in this.attr[at]) {
+         this.attr[at].fromJSON(json[at]);
+       } else {
+         this.attr[at] = json[at];
+       }
+     }
+   }
+ }
+
 };
 
 Game.UIMode.gameLose = {
