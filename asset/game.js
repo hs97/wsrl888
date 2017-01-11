@@ -1,7 +1,7 @@
 console.log["game.js loaded"];
 
 window.onload = function () {
-  console.log ("starting WSRL - window loaded");
+  //console.log ("starting WSRL - window loaded");
   //check if rot.js can work on this browser
   if (!ROT.isSupported()) {
           alert("The rot.js library isn't supported by your browser.");
@@ -32,6 +32,7 @@ window.onload = function () {
 var Game = {
   _PERSISTANCE_NAMESPACE: "wsrlgame",
   _randomSeed:0,
+
   _DISPLAY_SPACING: 1.1,
   display: {
     main:{
@@ -53,6 +54,7 @@ var Game = {
 
   _curUiMode: null,
   _game: null,
+  DATASTORE: {},
 
   init: function() {
     this._game = this;
@@ -77,6 +79,7 @@ var Game = {
   setRandomSeed: function (s) {
     this._randomSeed = s;
     console.log("using random seed "+this._randomSeed);
+    this.DATASTORE[Game.UIMode.gamePersistence.RANDOM_SEED_KEY] = this._randomSeed;
     ROT.RNG.setSeed(this._randomSeed);
   },
   getDisplay: function (displayId) {
@@ -145,11 +148,11 @@ var Game = {
    this._curUiMode.enter();}
    //render everything
    this.renderDisplayAll();
- },
- toJSON: function() {
-    var json = {};
-    json._randomSeed = this._randomSeed;
-    json[Game.UIMode.gamePlay.JSON_KEY] = Game.UIMode.gamePlay.toJSON();
-    return json;
  }
+ //toJSON: function() {
+  //  var json = {};
+    //json._randomSeed = this._randomSeed;
+    //json[Game.UIMode.gamePlay.JSON_KEY] = Game.UIMode.gamePlay.toJSON();
+    //return json;
+ //}
 };

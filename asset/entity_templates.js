@@ -2,7 +2,7 @@ Game.ALL_ENTITIES = {};
 
 Game.EntityGenerator = new Game.Generator('entities',Game.Entity);
 
-Game.EntityGenerator.learn('avatar',  {
+Game.EntityGenerator.learn({
   name: 'avatar',
   chr:'👲',
   fg:'#dda',
@@ -10,7 +10,7 @@ Game.EntityGenerator.learn('avatar',  {
   mixins: [Game.EntityMixin.WalkerCorporeal,Game.EntityMixin.HitPoints,Game.EntityMixin.Chronicle]
 });
 
-Game.EntityGenerator.learn('moss', {
+Game.EntityGenerator.learn({
   name: 'moss',
   chr:'🍍',
   fg:'#dda',
