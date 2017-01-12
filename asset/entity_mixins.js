@@ -1,6 +1,32 @@
 Game.EntityMixin = {};
 
 /* Mixins have a META property is is info about/for the mixin itself (usually just a name, group, and possibly an init function) and then all other properties. The META property is NOT copied into objects for which this mixin is used - all other properies ARE copied in */
+Game.EntityMixin.PlayerMessager = {
+  META: {
+    mixinName: 'PlayerMessager',
+    mixinGroup: 'PlayerMessager',
+    listeners: {
+      'walkForbidden': function(evtData) {
+        Game.Message.send('you can\'t walk into the '+evtData.target.getName());
+        Game.renderDisplayMessage();
+      }
+    //  'dealtDamage': function(evtData) {
+    //    Game.Message.send('you hit the '+evtData.damagee.getName()+' for '+evtData.damageAmount);
+    //  },
+    //  'madeKill': function(evtData) {
+    //    Game.Message.send('you killed the '+evtData.entKilled.getName());
+    //  },
+    //  'damagedBy': function(evtData) {
+    //    Game.Message.send('the '+evtData.damager.getName()+' hit you for '+evtData.damageAmount);
+    //  },
+    //  'killed': function(evtData) {
+    //    Game.Message.send('you were killed by the '+evtData.killedBy.getName());
+    //    Game.renderDisplayMessage();
+    //  }
+    }
+  }
+//    Game.Message.send(msg);
+};
 
 Game.EntityMixin.WalkerCorporeal = {
   META: {
@@ -11,19 +37,22 @@ Game.EntityMixin.WalkerCorporeal = {
     var targetX = Math.min(Math.max(0,this.getX() + dx),map.getWidth());
     var targetY = Math.min(Math.max(0,this.getY() + dy),map.getHeight());
     if (map.getEntity(targetX,targetY)) { // can't walk into spaces occupied by other entities
-       // NOTE: attack / interact handling (or event raising) would go here
-       return false;
-     }
-    if (map.getTile(targetX,targetY).isWalkable()) {
+      this.raiseEntityEvent('bumpEntity',{actor:this,recipient:map.getEntity(targetX,targetY)});
+      // NOTE: should bumping an entity always take a turn? might have to get some return data from the event (once event return data is implemented)
+      this.raiseEntityEvent('tookTurn');
+      return true;
+    }
+    var targetTile = map.getTile(targetX,targetY);
+    if (targetTile.isWalkable()) {
       this.setPos(targetX,targetY);
       var myMap = this.getMap();
       if (myMap) {
         myMap.updateEntityLocation(this);
       }
-      if (this.hasMixin('Chronicle')) { // NOTE: this is sub-optimal because it couple this mixin to the Chronicle one (i.e. this needs to know the Chronicle function to call) - the event system will solve this issue
-        this.trackTurn();
-      }
+      this.raiseEntityEvent('tookTurn');
       return true;
+    } else {
+      this.raiseEntityEvent('walkForbidden',{target:targetTile});
     }
     return false;
   }
@@ -35,6 +64,11 @@ Game.EntityMixin.Chronicle = {
     stateNamespace: '_Chronicle_attr',
     stateModel:  {
       turnCounter: 0
+    }
+  },
+  listeners: {
+    'tookTurn' :function(evtData)  {
+      this.trackTurn();
     }
   },
   _Chronicle_attr: {

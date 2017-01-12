@@ -220,11 +220,12 @@ JSON_KEY: 'uiMode_gamePlay',
 
   },
   handleInput: function(inputType,inputData){
-    Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
+
     console.log("input for gaming");
     console.log(inputType);
     console.dir(inputData);
     if (inputType == 'keypress') {
+      Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
       if (inputData.key =='w') {
         Game.switchUIMode(Game.UIMode.gameWin);}
 
