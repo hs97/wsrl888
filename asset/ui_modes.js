@@ -43,20 +43,30 @@ Game.UIMode.gamePersistence = {
   //  console.log('gameStart inputData:');
   //  console.dir(inputData);
 
-    var inputChar = String.fromCharCode(inputData.charCode);
-    if (inputChar == 'S'||inputChar == 's') { // ignore the various modding keys - control, shift, etc.
-      this.saveGame();
-    } else if (inputChar == 'L') {
-      this.restoreGame();
-    } else if (inputChar == 'N'||inputChar == 'n') {
-      this.newGame();
+  var actionBinding = Game.KeyBinding.getInputBinding(inputType,inputData);
+  // console.log('action binding is');
+  // console.dir(actionBinding);
+  // console.log('----------');
+    if (! actionBinding) {
+      return false;
     }
+
+    if        (actionBinding.actionKey == 'PERSISTENCE_SAVE') {
+      this.saveGame();
+    } else if (actionBinding.actionKey == 'PERSISTENCE_LOAD') {
+      this.restoreGame();
+    } else if (actionBinding.actionKey == 'PERSISTENCE_NEW') {
+      this.newGame();
+    } else if (actionBinding.actionKey == 'CANCEL') {
+      Game.switchUIMode(Game.UIMode.gamePlay);
+    }
+    return false;
   },
    saveGame: function () {
       if (this.localStorageAvailable()) {
         Game.DATASTORE.GAME_PLAY = Game.UIMode.gamePlay.attr;
         window.localStorage.setItem(Game._PERSISTANCE_NAMESPACE, JSON.stringify(Game.DATASTORE)); // .toJSON()
-
+        Game.Message.send('game saved');
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     },
@@ -93,12 +103,14 @@ Game.UIMode.gamePersistence = {
        }
        // game play
        Game.UIMode.gamePlay.attr = state_data.GAME_PLAY;
+       Game.Message.send('game loaded');
         Game.switchUIMode(Game.UIMode.gamePlay);
       }
     },
     newGame: function () {
       Game.setRandomSeed(5 + Math.floor(ROT.RNG.getUniform()*100000));
       Game.UIMode.gamePlay.setupNewGame();
+      Game.Message.send('new game started');
       Game.switchUIMode(Game.UIMode.gamePlay);
     },
     localStorageAvailable: function () { // NOTE: see https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
@@ -221,44 +233,51 @@ JSON_KEY: 'uiMode_gamePlay',
   },
   handleInput: function(inputType,inputData){
 
-    console.log("input for gaming");
-    console.log(inputType);
+
+    // console.log(inputType);
     console.dir(inputData);
-    if (inputType == 'keypress') {
-      Game.Message.send("you pressed the '"+String.fromCharCode(inputData.charCode)+"' key");
-      if (inputData.key =='w') {
-        Game.switchUIMode(Game.UIMode.gameWin);}
+    var actionBinding = Game.KeyBinding.getInputBinding(inputType,inputData);
+     //console.log('action binding is');
+     //console.dir(actionBinding);
+    // console.log('----------');
+    if (! actionBinding) {
+      return false;
+    }
+    //console.dir(actionBinding);
+    Game.Message.send("you pressed the '"+inputData.key+"' key");
+    setTimeout (function () {Game.Message.ageMessages();},1);
+    var tookTurn = false;
+    if        (actionBinding.actionKey == 'MOVE_UL') {
+      tookTurn = this.moveAvatar(-1 ,-1);
+    } else if (actionBinding.actionKey == 'MOVE_U') {
+      tookTurn = this.moveAvatar(0  ,-1);
+    } else if (actionBinding.actionKey == 'MOVE_UR') {
+      tookTurn = this.moveAvatar(1  ,-1);
+    } else if (actionBinding.actionKey == 'MOVE_L') {
+      tookTurn = this.moveAvatar(-1  ,0);
+    } else if (actionBinding.actionKey == 'MOVE_WAIT') {
+      tookTurn = true;
+    } else if (actionBinding.actionKey == 'MOVE_R') {
+      tookTurn = this.moveAvatar(1  , 0);
+    } else if (actionBinding.actionKey == 'MOVE_DL') {
+      tookTurn = this.moveAvatar(-1  , 1);
+    } else if (actionBinding.actionKey == 'MOVE_D') {
+      tookTurn = this.moveAvatar(0  , 1);
+    } else if (actionBinding.actionKey == 'MOVE_DR') {
+      tookTurn = this.moveAvatar(1  , 1);
+    }
 
-
-      else if (inputData.key == '1') {
-        this.moveAvatar(-1,1);
-      } else if (inputData.key == '2') {
-        this.moveAvatar(0,1);
-      } else if (inputData.key == '3') {
-        this.moveAvatar(1,1);
-      } else if (inputData.key == '4') {
-        this.moveAvatar(-1,0);
-      } else if (inputData.key == '5') {
-        // do nothing / stay still
-      } else if (inputData.key == '6') {
-        this.moveAvatar(1,0);
-      } else if (inputData.key == '7') {
-        this.moveAvatar(-1,-1);
-      } else if (inputData.key == '8') {
-        this.moveAvatar(0,-1);
-      } else if (inputData.key == '9') {
-        this.moveAvatar(1,-1);
-      }
-      Game.refresh();
-   }
-    else if (inputType == 'keydown') {
-      if ((inputData.key =='l')) {
-        Game.switchUIMode (Game.UIMode.gameLose);
-      }
-    if (inputData.key=='='){
+    else if    (actionBinding.actionKey == 'PERSISTENCE') {
       Game.switchUIMode(Game.UIMode.gamePersistence);
+    }  else if (actionBinding.actionKey == 'CANCEL') {
+      return false;
     }
-    }
+    if (tookTurn) {
+     this.getAvatar().raiseEntityEvent('actionDone');
+     Game.Message.ageMessages();
+     return true;
+   }
+   Game.refresh();
   },
   setupNewGame: function () {
    this.setMap(new Game.Map('caves1'));

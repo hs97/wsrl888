@@ -14,15 +14,7 @@ window.onload = function () {
           document.getElementById('wsrl-main-display').appendChild(Game.getDisplay('main').getContainer());
           document.getElementById('wsrl-message-display').appendChild(Game.getDisplay('message').getContainer());
 
-          var bindEventToScreen = function(eventType) {
-                     window.addEventListener(eventType, function(evt) {
-                       Game.eventHandler(eventType, evt);
-                     });
-                 };
-                 // Bind keyboard input events
-                 bindEventToScreen('keypress');
-                 bindEventToScreen('keydown');
-         //        bindEventToScreen('keyup');
+        
            Game.switchUIMode(Game.UIMode.gameStart);
 
 
@@ -71,6 +63,23 @@ var Game = {
     console.dir(this.display);
 
     this.renderMain();
+    Game.KeyBinding.useKeyBinding();
+
+    var game = this;
+    var bindEventToScreen = function(event) {
+      window.addEventListener(event, function(e) {
+          // When an event is received, send it to the
+          // screen if there is one
+          if (game._curUiMode !== null) {
+              // Send the event type and data to the screen
+              game._curUiMode.handleInput(event, e);
+            }
+          });
+        };
+  // Bind keyboard input events
+    bindEventToScreen('keypress');
+    bindEventToScreen('keydown');
+    //        bindEventToScreen('keyup');
   },
   getRandomSeed: function () {
     return this._randomSeed;

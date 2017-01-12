@@ -24,5 +24,5 @@ Game.Tile.prototype.isDiggable = function () {
 //-----------------------------------------------------------------------------
 
 Game.Tile.nullTile = new Game.Tile({name:'nullTile'});
-Game.Tile.floorTile = new Game.Tile({name:'floor',chr:' ',walkable:true});
+Game.Tile.floorTile = new Game.Tile({name:'floor',chr:'➕',walkable:true});
 Game.Tile.wallTile = new Game.Tile({name:'wall',chr:'🌲'});
